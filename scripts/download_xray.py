@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import os
 import sys
 import urllib.error
 import urllib.request
@@ -28,10 +29,11 @@ ASSET_NAME = {
 
 
 def _http_get(url: str, accept: str = "application/octet-stream") -> bytes:
-    req = urllib.request.Request(
-        url,
-        headers={"User-Agent": "byrds-vpn/0.1", "Accept": accept},
-    )
+    headers = {"User-Agent": "byrds-vpn/0.1", "Accept": accept}
+    token = os.environ.get("GITHUB_TOKEN")
+    if token and url.startswith("https://api.github.com/"):
+        headers["Authorization"] = f"Bearer {token}"
+    req = urllib.request.Request(url, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=60) as resp:
             return resp.read()
@@ -42,13 +44,13 @@ def _http_get(url: str, accept: str = "application/octet-stream") -> bytes:
 
 def download_xray(platform_key: str, target: Path) -> None:
     name = ASSET_NAME[platform_key]
-    print("→ Fetching latest Xray-core release metadata from GitHub…")
+    print("-> Fetching latest Xray-core release metadata from GitHub...")
     meta = json.loads(_http_get(RELEASE_API, accept="application/vnd.github+json"))
     asset = next((a for a in meta.get("assets", []) if a.get("name") == name), None)
     if asset is None:
         raise SystemExit(f"release asset {name!r} not found in latest release")
 
-    print(f"→ Downloading {name} (size={asset['size']:,} bytes)…")
+    print(f"-> Downloading {name} (size={asset['size']:,} bytes)...")
     blob = _http_get(asset["browser_download_url"])
     target.mkdir(parents=True, exist_ok=True)
 
@@ -62,7 +64,7 @@ def download_xray(platform_key: str, target: Path) -> None:
                 dst.write_bytes(z.read(member))
                 if sys.platform != "win32" and out_name == "xray":
                     dst.chmod(0o755)
-                print(f"  ✓ {dst}")
+                print(f"  [ok] {dst}")
 
 
 def main() -> int:
