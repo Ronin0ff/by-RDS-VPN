@@ -11,9 +11,10 @@ project_root = Path.cwd()
 vendor_dir = project_root / "vendor"
 
 binaries = []
-datas = [
-    (str(project_root / "byrds" / "assets"), "byrds/assets"),
-]
+datas = []
+assets_dir = project_root / "byrds" / "assets"
+if assets_dir.exists() and any(assets_dir.rglob("*")):
+    datas.append((str(assets_dir), "byrds/assets"))
 for asset_name in ("xray.exe", "geoip.dat", "geosite.dat"):
     src = vendor_dir / asset_name
     if src.exists():

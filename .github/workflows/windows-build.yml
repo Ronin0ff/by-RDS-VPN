@@ -26,6 +26,10 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Download Xray-core + geo assets
+        env:
+          PYTHONIOENCODING: utf-8
+          PYTHONUTF8: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/download_xray.py --platform windows-x86_64
 
       - name: Build portable .exe
