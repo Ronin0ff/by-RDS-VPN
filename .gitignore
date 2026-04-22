@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+build/
+dist/
+*.spec.bak
+
+# Venv
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Xray binary (downloaded at build time)
+vendor/xray.exe
+vendor/xray
+vendor/geoip.dat
+vendor/geosite.dat
+vendor/wintun.dll
+
+# PyInstaller
+*.onefile-build*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime
+*.log
+byrds.log

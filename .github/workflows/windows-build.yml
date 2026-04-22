@@ -1,0 +1,67 @@
+name: Build Windows portable
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  windows-build:
+    name: Build byRDS.exe
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install Python deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Download Xray-core + geo assets
+        run: python scripts/download_xray.py --platform windows-x86_64
+
+      - name: Build portable .exe
+        run: pyinstaller --clean --noconfirm byrds.spec
+
+      - name: Smoke-test (--version)
+        run: |
+          dist\byRDS.exe --version
+        shell: cmd
+
+      - name: Prepare portable bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist\portable | Out-Null
+          Copy-Item -Path dist\byRDS.exe -Destination dist\portable\byRDS.exe
+          Copy-Item -Path vendor -Destination dist\portable\vendor -Recurse
+          Copy-Item -Path README.md -Destination dist\portable\README.md
+          Copy-Item -Path LICENSE -Destination dist\portable\LICENSE.txt
+          Compress-Archive -Path dist\portable\* -DestinationPath dist\byRDS-portable.zip -Force
+
+      - name: Upload artifact (exe)
+        uses: actions/upload-artifact@v4
+        with:
+          name: byRDS-exe
+          path: dist/byRDS.exe
+
+      - name: Upload artifact (portable zip)
+        uses: actions/upload-artifact@v4
+        with:
+          name: byRDS-portable
+          path: dist/byRDS-portable.zip
+
+      - name: Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/byRDS.exe
+            dist/byRDS-portable.zip
